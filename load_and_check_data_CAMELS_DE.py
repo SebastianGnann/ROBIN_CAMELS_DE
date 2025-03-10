@@ -109,9 +109,6 @@ for id in df_attr["gauge_id"]:
     fig, ax = plt.subplots(figsize=(12, 4), tight_layout=True)
     im = ax.plot(df_tmp["date"], df_tmp["discharge_spec_obs"], alpha=0.9)
     ax.set_ylabel("Streamflow (mm/d)")
-    # ax.set_xlim([0., 5.])
-    # ax.set_ylim([0., 5.])
-    # log y axis
     fig.savefig(figures_timeseries_path + "CAMELS_DE_" + id + ".png", dpi=600, bbox_inches='tight')
     plt.close()
 
@@ -145,6 +142,9 @@ if df["record_length"][id] < 20:
 # area check
 if np.abs(df["area_metadata"] - df["area"] / df["area_metadata"]) > 0.1:
     area_flag = 0
+
+# after initial screening, save all timeseries as plots and check manually again
+# ...
 
 # extract attributes that are necessary
 # gauge_id provider_id gauge_name water_body_name gauge_lon gauge_lat area_metadata area
