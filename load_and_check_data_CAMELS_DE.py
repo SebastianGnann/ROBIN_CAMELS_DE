@@ -106,11 +106,12 @@ for id in df_attr["gauge_id"]:
     mean_Q_list.append(np.nanmean(df_tmp["discharge_spec_obs"]))
 
     # plot data
-    fig, ax = plt.subplots(figsize=(8, 4), tight_layout=True)
+    fig, ax = plt.subplots(figsize=(12, 4), tight_layout=True)
     im = ax.plot(df_tmp["date"], df_tmp["discharge_spec_obs"], alpha=0.9)
     ax.set_ylabel("Streamflow (mm/d)")
     # ax.set_xlim([0., 5.])
     # ax.set_ylim([0., 5.])
+    # log y axis
     fig.savefig(figures_timeseries_path + "CAMELS_DE_" + id + ".png", dpi=600, bbox_inches='tight')
     plt.close()
 
@@ -125,16 +126,17 @@ df["record_length"] = record_length_list
 df["data_gap"] = data_gap_list
 
 # human impacts
-if df["urban_frac"][id] < 10:
+# artificial_surfaces_perc dams_num
+if df["artificial_surfaces_perc"][id] < 10:
     urban_flag = 1
-elif df["urban_frac"][id] < 20:
+elif df["artificial_surfaces_perc"][id] < 20:
     urban_flag = 2
 else:
     urban_flag = 0
 
 # no dams etc.
 
-# todo: landuse
+# todo: landuse change?
 
 # data quality
 if df["record_length"][id] < 20:
