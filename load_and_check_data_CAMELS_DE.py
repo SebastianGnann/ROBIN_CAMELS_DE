@@ -2,11 +2,11 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import os
-
-# from mpl_toolkits.basemap import Basemap
+from functions import helper_fcts
+import geopandas as gpd
 
 # prepare data
-data_path = "C:/Users/Sebastian/Documents/Data/camels_de/"
+data_path = "D:/data/CAMELS_DE/"
 
 # check if folders exist
 results_path = "results/"
@@ -33,26 +33,6 @@ df_attr = pd.merge(df_topo, df_climate, on='gauge_id')
 df_attr = pd.merge(df_attr, df_landcover, on='gauge_id')
 df_attr = pd.merge(df_attr, df_humaninfluence, on='gauge_id')
 
-### checks and additional attributes
-# record length
-# missing value fraction
-# strange Q values: nan, negative, many 0s, consecutive days with same flow, step changes
-# plot map
-# plot timeseries
-
-'''
-    ID
-    Name
-    Longitude
-    Latitude
-    Catchment Area (km²)
-    Measuring Organisation
-    Level 1 or Level 2 (Catchment Development)
-    Level 1 or Level 2 (Data Quality)
-    Record Length
-    Missing Data Criteria Met? (Yes/No)
-'''
-
 '''
 Level 1 Network:
 -  ≤10% urbanization in catchment
@@ -72,38 +52,108 @@ Level 2 Network:
 -  No specific requirement for data gaps
 '''
 
-# NOTE: information on individual gauging stations, rating curve uncertainties, etc.
-# not possible without considerable efforts, partly because it is different for every state
-# flags: level 1 = 1, level 2 = 2, not in network = 0
-# todo: add data source in metadata: CAMELS-DE or more specific
-
 gauge_id_list = []
-mean_P_list = []  # precip average
-mean_Q_list = []  # Q average
+mean_P_list = []
+mean_PET_list = []
+mean_Q_list = []
 perc_complete_list = []
 record_length_list = []
 data_gap_list = []
 data_flag_list = []
 
 for id in df_attr["gauge_id"]:
-    print(id)
+    #print(id)
 
     # load data
     df_tmp = pd.read_csv(data_path + "timeseries/CAMELS_DE_hydromet_timeseries_" + str(id) + ".csv", sep=',')
     df_tmp["date"] = pd.to_datetime(df_tmp["date"])
+    df_sim = pd.read_csv(data_path + "timeseries_simulated/CAMELS_DE_discharge_sim_" + str(id) + ".csv", sep=',')
+    df_sim["date"] = pd.to_datetime(df_sim["date"])
+    df_tmp = pd.merge(df_tmp, df_sim[["date", "pet_hargreaves"]], on='date')
+
+    # remove NaNs at beginning
+    first_valid_index = df_tmp["discharge_spec_obs"].first_valid_index()
+    df_tmp = df_tmp.loc[first_valid_index:]
 
     # check data
     perc_complete = np.sum(~np.isnan(df_tmp["discharge_spec_obs"].values)) / len(df_tmp["discharge_spec_obs"].values)
-    record_length = len(df_tmp["date"])
-    data_gaps = 0  # check longest gap (<3y)
+    record_length = (df_tmp["date"].max() - df_tmp["date"].min()).days / 365.25
+    df_copy = df_tmp.copy().dropna(subset=["discharge_spec_obs"])
+    data_gap = df_copy["date"].diff().max()
+    if df_tmp["discharge_spec_obs"].any() < 0:
+        print("Negative values in streamflow data: ", id)
+    if df_tmp["discharge_spec_obs"].any() > 1000:
+        print("Unrealistic high values in streamflow data (> 1000 mm/d): ", id)
 
     # add data
     gauge_id_list.append(id)
     perc_complete_list.append(perc_complete)
     record_length_list.append(record_length)
-    data_gap_list.append(data_gaps)
+    data_gap_list.append(data_gap)
     mean_P_list.append(np.nanmean(df_tmp["precipitation_mean"]))
     mean_Q_list.append(np.nanmean(df_tmp["discharge_spec_obs"]))
+    mean_PET_list.append(np.nanmean(df_tmp["pet_hargreaves"]))
+
+# create dataframe
+df = pd.DataFrame()
+df["gauge_id"] = gauge_id_list  # as a check
+df = pd.merge(df_attr, df, on='gauge_id')
+df["mean_P"] = mean_P_list
+df["mean_Q"] = mean_Q_list
+df["mean_PET"] = mean_PET_list
+df["runoff_ratio"] = df["mean_Q"] / df["mean_P"]
+df["aridity"] = df["mean_PET"] / df["mean_P"]
+df["perc_complete"] = perc_complete_list
+df["record_length"] = record_length_list
+df["data_gap"] = data_gap_list
+df["area_error"] = np.abs((df["area_metadata"] - df["area"]) / df["area_metadata"])
+
+# quality control
+# flags: level 1 = 1, level 2 = 2, did not pass checks = 0
+
+# human impacts
+df["humanimpact_flag"] = 0
+df.loc[(df["artificial_surfaces_perc"] >= 0) & (df["artificial_surfaces_perc"] <= 10) & (
+        df["dams_num"] < 1), "humanimpact_flag"] = 1
+df.loc[(df["artificial_surfaces_perc"] > 10) & (df["artificial_surfaces_perc"] <= 20) & (
+        df["dams_num"] < 1), "humanimpact_flag"] = 2
+# land use change is currently not possible to check
+
+# data quality
+df["recordlength_flag"] = 0
+df.loc[(df["record_length"] >= 40) & (df["perc_complete"] >= 0.9) & (
+        df["data_gap"] < pd.Timedelta(days=1095)), "recordlength_flag"] = 1
+df.loc[(df["record_length"] >= 20) & (df["record_length"] < 40) & (df["perc_complete"] >= 0.9) & (
+        df["data_gap"] < pd.Timedelta(days=1095)), "recordlength_flag"] = 2
+# NOTE: information on individual gauging stations, rating curve uncertainties, etc. not available
+
+# other checks
+df["dataquality_flag"] = 0
+df.loc[(df["area_error"] < 0.1) & (df["mean_P"] > df["mean_Q"]), "dataquality_flag"] = 1
+# check for strange Q values: nan, negative, many 0s, consecutive days with same flow, step changes -> ROBIN CHECKS?
+
+# ROBIN list
+df_ROBIN = pd.read_csv("camel_robin_overlap.csv", sep=',', skiprows=0, encoding='latin-1')
+df["ROBIN_flag"] = 0
+df.loc[df["gauge_id"].isin(df_ROBIN["gauge_id"]), "ROBIN_flag"] = 1
+
+# final data flag
+df["data_flag"] = 0
+df.loc[((df["humanimpact_flag"] == 1) | (df["humanimpact_flag"] == 2)) &
+       ((df["recordlength_flag"] == 1) | (df["recordlength_flag"] == 2)) &
+       ((df["dataquality_flag"] == 1) | (df["dataquality_flag"] == 2)) &
+       (df["ROBIN_flag"] == 1), "data_flag"] = 2
+df.loc[(df["humanimpact_flag"] == 1) & (df["recordlength_flag"] == 1) & (df["dataquality_flag"] == 1) & (
+        df["ROBIN_flag"] == 1), "data_flag"] = 1
+
+# create dataframe that only consists of "data_flag" not equal to 0
+df_checked = df[df["data_flag"] != 0]
+
+# after initial screening, save all timeseries as plots and check manually again
+for id in df_checked["gauge_id"]:
+    # load data
+    df_tmp = pd.read_csv(data_path + "timeseries/CAMELS_DE_hydromet_timeseries_" + str(id) + ".csv", sep=',')
+    df_tmp["date"] = pd.to_datetime(df_tmp["date"])
 
     # plot data
     fig, ax = plt.subplots(figsize=(12, 4), tight_layout=True)
@@ -112,72 +162,65 @@ for id in df_attr["gauge_id"]:
     fig.savefig(figures_timeseries_path + "CAMELS_DE_" + id + ".png", dpi=600, bbox_inches='tight')
     plt.close()
 
-# create dataframe
-df = pd.DataFrame()
-df["gauge_id"] = gauge_id_list  # to check
-df = pd.merge(df_attr, df, on='gauge_id')
-df["mean_P"] = mean_P_list
-df["mean_Q"] = mean_Q_list
-df["perc_complete"] = perc_complete_list
-df["record_length"] = record_length_list
-df["data_gap"] = data_gap_list
+# extract attributes that are necessary and save results
+'''
+    ID
+    Name
+    Longitude
+    Latitude
+    Catchment Area (km²)
+    Measuring Organisation
+    Level 1 or Level 2 (Catchment Development)
+    Level 1 or Level 2 (Data Quality)
+    Record Length
+    Missing Data Criteria Met? (Yes/No)
+'''
 
-# human impacts
-# artificial_surfaces_perc dams_num
-if df["artificial_surfaces_perc"][id] < 10:
-    urban_flag = 1
-elif df["artificial_surfaces_perc"][id] < 20:
-    urban_flag = 2
-else:
-    urban_flag = 0
+df_checked["ID"] = df_checked["gauge_id"]
+df_checked["Name"] = df_checked["gauge_name"]
+df_checked["Longitude"] = df_checked["gauge_lon"]
+df_checked["Latitude"] = df_checked["gauge_lat"]
+df_checked["Catchment Area (km²)"] = df_checked["area"]
+df_checked["Measuring Organisation"] = df_checked["federal_state"]
+df_checked["Level 1 or Level 2 (Catchment Development)"] = df_checked["humanimpact_flag"]
+df_checked["Level 1 or Level 2 (Data Quality)"] = df_checked["data_flag"]
+df_checked["Record Length"] = np.round(df_checked["record_length"],2)
+df_checked["Missing Data Criteria Met? (Yes/No)"] = df_checked["data_gap"].apply(
+    lambda x: "Yes" if x < pd.Timedelta(days=1095) else "No")
 
-# no dams etc.
-
-# todo: landuse change?
-
-# data quality
-if df["record_length"][id] < 20:
-    length_flag = 0
-
-# area check
-if np.abs(df["area_metadata"] - df["area"] / df["area_metadata"]) > 0.1:
-    area_flag = 0
-
-# after initial screening, save all timeseries as plots and check manually again
-# ...
-
-# extract attributes that are necessary
-# gauge_id provider_id gauge_name water_body_name gauge_lon gauge_lat area_metadata area
-#
-
-# save results
-df.to_csv(results_path + 'camels_de_ROBIN.csv', index=False)
+df_final = df_checked[["ID", "Name", "Longitude", "Latitude", "Catchment Area (km²)", "Measuring Organisation",
+                       "Level 1 or Level 2 (Catchment Development)", "Level 1 or Level 2 (Data Quality)",
+                       "Record Length", "Missing Data Criteria Met? (Yes/No)",
+                       "gauge_name", "water_body_name", "artificial_surfaces_perc", "dams_num", "perc_complete", "data_gap",
+                       "aridity", "runoff_ratio"]]
+df_final.to_csv(results_path + 'camels_de_ROBIN.csv', index=False)
 print("Finished saving data.")
 
-# scatter
-fig, ax = plt.subplots(figsize=(5, 4), tight_layout=True)
-line_x = np.linspace(-10, 10, 100)
-line_y = line_x
-ax.plot(line_x, line_y, 'k--')
-im = ax.scatter(df["P_mean"], df["Q_mean"], s=20, alpha=0.9)
-ax.set_xlabel("")
-ax.set_ylabel("")
-ax.set_xlim([0., 5.])
-ax.set_ylim([0., 5.])
-plt.show()
+# plot standard Budyko plot
+fig = plt.figure(figsize=(4, 3), constrained_layout=True)
+axes = plt.axes()
+im = axes.scatter(df_final["aridity"], 1 - df_final["runoff_ratio"], s=10, c="tab:blue", alpha=0.8, lw=0)
+axes.set_xlabel("Aridity [-]")
+axes.set_ylabel("1 - Runoff ratio [-]")
+axes.set_xlim([0, 2])
+axes.set_ylim([-0.25, 1.25])
+helper_fcts.plot_Budyko_limits(df_final["aridity"], 1 - df_final["runoff_ratio"], axes)
+helper_fcts.plot_Budyko_curve(np.linspace(0, 10, 100), axes)
+fig.savefig(figures_path + "Budyko_plot_ROBIN_CAMELS_DE.png", dpi=600, bbox_inches='tight')
+plt.close()
 
-# map
-fig, ax = plt.subplots(figsize=(4, 4))
-m = Basemap(projection='robin', resolution='l', area_thresh=1000.0, lat_0=0, lon_0=0)
-m.drawcoastlines()
-m.drawcountries()
-m.fillcontinents(color='lightgrey', lake_color='white')
-m.drawmapboundary(fill_color='white')
-x, y = m(df["gauge_lon"].values, df["gauge_lat"].values)
-scatter = m.scatter(x, y, s=20, c=df["mean_Q"], alpha=0.9, vmin=0.0, vmax=5.0, cmap='viridis')  # invert colormap
-cbar = plt.colorbar(scatter, ax=ax, pad=0.02, shrink=0.3, aspect=20)
-ax.set_xlim(np.min(x) * 0.99, np.max(x) * 1.01)
-ax.set_ylim(np.min(y) * 0.99, np.max(y) * 1.01)
-cbar.set_label('Q mean [-]', rotation=270, labelpad=15)
-plt.tight_layout()
-plt.show()
+# plot map
+fig, ax = plt.subplots(figsize=(8, 4))
+world = gpd.read_file(gpd.datasets.get_path('naturalearth_lowres'))
+scatter_df = gpd.GeoDataFrame(df_final, geometry=gpd.points_from_xy(df_final.Longitude, df_final.Latitude))
+world.boundary.plot(ax=ax, linewidth=0.5, color='black')
+world.plot(ax=ax, color='lightgrey', edgecolor='black', )
+scatter_df.plot(ax=ax, markersize=10, color='tab:blue')
+plt.title('CAMELS-DE catchments')
+plt.xlabel('Longitude')
+plt.ylabel('Latitude')
+plt.xlim(4, 16)
+plt.ylim(46, 56)
+plt.gca().set_aspect('equal', adjustable='box')
+fig.savefig(figures_path + "map_ROBIN_CAMELS_DE" + ".png", dpi=600, bbox_inches='tight')
+plt.close()
