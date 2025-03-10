@@ -142,14 +142,15 @@ df["data_flag"] = 0
 df.loc[((df["humanimpact_flag"] == 1) | (df["humanimpact_flag"] == 2)) &
        ((df["recordlength_flag"] == 1) | (df["recordlength_flag"] == 2)) &
        ((df["dataquality_flag"] == 1) | (df["dataquality_flag"] == 2)) &
-       (df["ROBIN_flag"] == 1), "data_flag"] = 2
+       (df["ROBIN_flag"] < 10), "data_flag"] = 2
 df.loc[(df["humanimpact_flag"] == 1) & (df["recordlength_flag"] == 1) & (df["dataquality_flag"] == 1) & (
-        df["ROBIN_flag"] == 1), "data_flag"] = 1
+        df["ROBIN_flag"] < 10), "data_flag"] = 1
 
 # create dataframe that only consists of "data_flag" not equal to 0
 df_checked = df[df["data_flag"] != 0]
 
 # after initial screening, save all timeseries as plots and check manually again
+'''
 for id in df_checked["gauge_id"]:
     # load data
     df_tmp = pd.read_csv(data_path + "timeseries/CAMELS_DE_hydromet_timeseries_" + str(id) + ".csv", sep=',')
@@ -161,6 +162,7 @@ for id in df_checked["gauge_id"]:
     ax.set_ylabel("Streamflow (mm/d)")
     fig.savefig(figures_timeseries_path + "CAMELS_DE_" + id + ".png", dpi=600, bbox_inches='tight')
     plt.close()
+'''
 
 # extract attributes that are necessary and save results
 '''
