@@ -142,9 +142,9 @@ df["data_flag"] = 0
 df.loc[((df["humanimpact_flag"] == 1) | (df["humanimpact_flag"] == 2)) &
        ((df["recordlength_flag"] == 1) | (df["recordlength_flag"] == 2)) &
        ((df["dataquality_flag"] == 1) | (df["dataquality_flag"] == 2)) &
-       (df["ROBIN_flag"] < 10), "data_flag"] = 2
+       (df["ROBIN_flag"] == 1), "data_flag"] = 2
 df.loc[(df["humanimpact_flag"] == 1) & (df["recordlength_flag"] == 1) & (df["dataquality_flag"] == 1) & (
-        df["ROBIN_flag"] < 10), "data_flag"] = 1
+        df["ROBIN_flag"] == 1), "data_flag"] = 1
 
 # create dataframe that only consists of "data_flag" not equal to 0
 df_checked = df[df["data_flag"] != 0]
@@ -190,6 +190,10 @@ df_checked["Record Length"] = np.round(df_checked["record_length"],2)
 df_checked["Missing Data Criteria Met? (Yes/No)"] = df_checked["data_gap"].apply(
     lambda x: "Yes" if x < pd.Timedelta(days=1095) else "No")
 
+# count how many in df_final Level 1 or Level 2 are Level 1 or Level 2
+print(df_checked["Level 1 or Level 2 (Catchment Development)"].value_counts())
+print(df_checked["Level 1 or Level 2 (Data Quality)"].value_counts())
+
 df_final = df_checked[["ID", "Name", "Longitude", "Latitude", "Catchment Area (km²)", "Measuring Organisation",
                        "Level 1 or Level 2 (Catchment Development)", "Level 1 or Level 2 (Data Quality)",
                        "Record Length", "Missing Data Criteria Met? (Yes/No)",
@@ -197,6 +201,7 @@ df_final = df_checked[["ID", "Name", "Longitude", "Latitude", "Catchment Area (k
                        "aridity", "runoff_ratio"]]
 df_final.to_csv(results_path + 'camels_de_ROBIN.csv', index=False)
 print("Finished saving data.")
+
 
 # plot standard Budyko plot
 fig = plt.figure(figsize=(4, 3), constrained_layout=True)
