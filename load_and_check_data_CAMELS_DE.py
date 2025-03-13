@@ -62,7 +62,7 @@ data_gap_list = []
 data_flag_list = []
 
 for id in df_attr["gauge_id"]:
-    #print(id)
+    # print(id)
 
     # load data
     df_tmp = pd.read_csv(data_path + "timeseries/CAMELS_DE_hydromet_timeseries_" + str(id) + ".csv", sep=',')
@@ -186,7 +186,7 @@ df_checked["Catchment Area (km²)"] = df_checked["area"]
 df_checked["Measuring Organisation"] = df_checked["federal_state"]
 df_checked["Level 1 or Level 2 (Catchment Development)"] = df_checked["humanimpact_flag"]
 df_checked["Level 1 or Level 2 (Data Quality)"] = df_checked["data_flag"]
-df_checked["Record Length"] = np.round(df_checked["record_length"],2)
+df_checked["Record Length"] = np.round(df_checked["record_length"], 2)
 df_checked["Missing Data Criteria Met? (Yes/No)"] = df_checked["data_gap"].apply(
     lambda x: "Yes" if x < pd.Timedelta(days=1095) else "No")
 
@@ -197,11 +197,11 @@ print(df_checked["Level 1 or Level 2 (Data Quality)"].value_counts())
 df_final = df_checked[["ID", "Name", "Longitude", "Latitude", "Catchment Area (km²)", "Measuring Organisation",
                        "Level 1 or Level 2 (Catchment Development)", "Level 1 or Level 2 (Data Quality)",
                        "Record Length", "Missing Data Criteria Met? (Yes/No)",
-                       "gauge_name", "water_body_name", "artificial_surfaces_perc", "dams_num", "perc_complete", "data_gap",
+                       "gauge_name", "water_body_name", "artificial_surfaces_perc", "dams_num", "perc_complete",
+                       "data_gap",
                        "aridity", "runoff_ratio"]]
 df_final.to_csv(results_path + 'camels_de_ROBIN.csv', index=False)
 print("Finished saving data.")
-
 
 # plot standard Budyko plot
 fig = plt.figure(figsize=(4, 3), constrained_layout=True)
@@ -230,4 +230,63 @@ plt.xlim(4, 16)
 plt.ylim(46, 56)
 plt.gca().set_aspect('equal', adjustable='box')
 fig.savefig(figures_path + "map_ROBIN_CAMELS_DE" + ".png", dpi=600, bbox_inches='tight')
+plt.close()
+
+### alternative selection of all original ROBIN files
+
+# original ROBIN list
+df_ROBIN_orig = df[df["ROBIN_flag"] == 1]
+
+df_ROBIN_orig["ID"] = df_ROBIN_orig["gauge_id"]
+df_ROBIN_orig["Name"] = df_ROBIN_orig["gauge_name"]
+df_ROBIN_orig["Longitude"] = df_ROBIN_orig["gauge_lon"]
+df_ROBIN_orig["Latitude"] = df_ROBIN_orig["gauge_lat"]
+df_ROBIN_orig["Catchment Area (km²)"] = df_ROBIN_orig["area"]
+df_ROBIN_orig["Measuring Organisation"] = df_ROBIN_orig["federal_state"]
+df_ROBIN_orig["Level 1 or Level 2 (Catchment Development)"] = df_ROBIN_orig["humanimpact_flag"]
+df_ROBIN_orig["Level 1 or Level 2 (Data Quality)"] = df_ROBIN_orig["data_flag"]
+df_ROBIN_orig["Record Length"] = np.round(df_ROBIN_orig["record_length"], 2)
+df_ROBIN_orig["Missing Data Criteria Met? (Yes/No)"] = df_ROBIN_orig["data_gap"].apply(
+    lambda x: "Yes" if x < pd.Timedelta(days=1095) else "No")
+
+# count how many in df_final Level 1 or Level 2 are Level 1 or Level 2
+print(df_ROBIN_orig["Level 1 or Level 2 (Catchment Development)"].value_counts())
+print(df_ROBIN_orig["Level 1 or Level 2 (Data Quality)"].value_counts())
+
+df_ROBIN_final = df_ROBIN_orig[["ID", "Name", "Longitude", "Latitude", "Catchment Area (km²)", "Measuring Organisation",
+                                "Level 1 or Level 2 (Catchment Development)", "Level 1 or Level 2 (Data Quality)",
+                                "Record Length", "Missing Data Criteria Met? (Yes/No)",
+                                "gauge_name", "water_body_name", "artificial_surfaces_perc", "dams_num",
+                                "perc_complete", "data_gap", "area_error",
+                                "aridity", "runoff_ratio", "data_flag"]]
+df_ROBIN_final.to_csv(results_path + 'camels_de_ROBIN_orig.csv', index=False)
+print("Finished saving data.")
+
+# plot standard Budyko plot
+fig = plt.figure(figsize=(4, 3), constrained_layout=True)
+axes = plt.axes()
+im = axes.scatter(df_ROBIN_final["aridity"], 1 - df_ROBIN_final["runoff_ratio"], s=10, c="tab:blue", alpha=0.8, lw=0)
+axes.set_xlabel("Aridity [-]")
+axes.set_ylabel("1 - Runoff ratio [-]")
+axes.set_xlim([0, 2])
+axes.set_ylim([-0.25, 1.25])
+helper_fcts.plot_Budyko_limits(df_ROBIN_final["aridity"], 1 - df_ROBIN_final["runoff_ratio"], axes)
+helper_fcts.plot_Budyko_curve(np.linspace(0, 10, 100), axes)
+fig.savefig(figures_path + "Budyko_plot_ROBIN_CAMELS_DE_orig.png", dpi=600, bbox_inches='tight')
+plt.close()
+
+# plot map
+fig, ax = plt.subplots(figsize=(8, 4))
+world = gpd.read_file(gpd.datasets.get_path('naturalearth_lowres'))
+scatter_df = gpd.GeoDataFrame(df_ROBIN_final, geometry=gpd.points_from_xy(df_ROBIN_final.Longitude, df_ROBIN_final.Latitude))
+world.boundary.plot(ax=ax, linewidth=0.5, color='black')
+world.plot(ax=ax, color='lightgrey', edgecolor='black', )
+scatter_df.plot(ax=ax, markersize=10, color='tab:blue')
+plt.title('CAMELS-DE catchments')
+plt.xlabel('Longitude')
+plt.ylabel('Latitude')
+plt.xlim(4, 16)
+plt.ylim(46, 56)
+plt.gca().set_aspect('equal', adjustable='box')
+fig.savefig(figures_path + "map_ROBIN_CAMELS_DE_orig" + ".png", dpi=600, bbox_inches='tight')
 plt.close()
