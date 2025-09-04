@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import os
+from functions import helper_fcts
 import geopandas as gpd
 
 # prepare data
@@ -73,9 +74,9 @@ ax2.invert_yaxis()
 #ax.set_yscale('log')
 ax.set_ylabel('Discharge [mm/d]')
 ax2.set_ylabel('Precipitation [mm/d]')
-plt.title(f'CAMELS-DE Catchment {id}')
+plt.title(f'CAMELS-DE catchment {id}')
 plt.tight_layout()
-ax.set_xlim(pd.to_datetime('2017-01-11'), pd.to_datetime('2019-10-31'))
+ax.set_xlim(pd.to_datetime('2001-01-11'), pd.to_datetime('2020-10-31'))
 #fig.savefig(figures_timeseries_path + "timeseries_CAMELS_DE_catchment_" + str(id) + ".png", dpi=600, bbox_inches='tight')
 plt.show()
 #plt.close()
