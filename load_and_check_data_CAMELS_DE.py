@@ -20,14 +20,10 @@ if not os.path.isdir(figures_path):
     os.makedirs(figures_path)
 
 # load attributes needed for quality control
-df_topo = pd.read_csv(data_path + "CAMELS_DE_topographic_attributes.csv",
-                      sep=',', skiprows=0, encoding='latin-1')
-df_climate = pd.read_csv(data_path + "CAMELS_DE_climatic_attributes.csv",
-                         sep=',', skiprows=0, encoding='latin-1')
-df_landcover = pd.read_csv(data_path + "CAMELS_DE_landcover_attributes.csv",
-                           sep=',', skiprows=0, encoding='latin-1')
-df_humaninfluence = pd.read_csv(data_path + "CAMELS_DE_humaninfluence_attributes.csv",
-                                sep=',', skiprows=0, encoding='latin-1')
+df_topo = pd.read_csv(data_path + "CAMELS_DE_topographic_attributes.csv", sep=',', skiprows=0, encoding='latin-1')
+df_climate = pd.read_csv(data_path + "CAMELS_DE_climatic_attributes.csv", sep=',', skiprows=0, encoding='latin-1')
+df_landcover = pd.read_csv(data_path + "CAMELS_DE_landcover_attributes.csv", sep=',', skiprows=0, encoding='latin-1')
+df_humaninfluence = pd.read_csv(data_path + "CAMELS_DE_humaninfluence_attributes.csv", sep=',', skiprows=0, encoding='latin-1')
 
 df_attr = pd.merge(df_topo, df_climate, on='gauge_id')
 df_attr = pd.merge(df_attr, df_landcover, on='gauge_id')
@@ -290,3 +286,12 @@ plt.ylim(46, 56)
 plt.gca().set_aspect('equal', adjustable='box')
 fig.savefig(figures_path + "map_ROBIN_CAMELS_DE_orig" + ".png", dpi=600, bbox_inches='tight')
 plt.close()
+
+# check reference network (https://www.umweltbundesamt.de/en/monitoring-on-das/cluster/water-supply/ww-i-3/indicator)
+df_UBA = pd.read_csv(results_path + "reference_gauges_Germany_UBA.csv", sep=',', skiprows=0, encoding='latin-1')
+df_ROBIN_final = pd.read_csv(results_path + 'camels_de_ROBIN_orig.csv', sep=',', skiprows=0, encoding='latin-1')
+df_UBA["in_CAMELS_DE"] = df_UBA["Pegelname"].isin(df_attr["gauge_name"])
+df_UBA["in_ROBIN_DE"] = df_UBA["Pegelname"].isin(df_ROBIN_final["gauge_name"])
+print(sum(df_UBA["in_CAMELS_DE"]))
+print(sum(df_UBA["in_ROBIN_DE"]))
+# some problems due to Umlaute, but overall it seems like there is not much overlap

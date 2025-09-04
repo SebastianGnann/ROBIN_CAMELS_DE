@@ -1,0 +1,77 @@
+Flussgebietseinheit,Land,Fluss,Pegelname,Größe EZGs (km2)
+Donau,BW,Donau,Hundersingen,2621.32
+Donau,BY,Iller,Sonthofen,387.91
+Donau,BY,Zusam,Pfaffenhofen,505.07
+Donau,BY,Schwarzach,Mettendorf,303.73
+Donau,BY,Pfreimd,Böhmischbruck,483.32
+Donau,BY,Schwarzer Regen,Teisnach,626.63
+Donau,BY,Ammer,Weilheim,607.39
+Donau,BY,Traun,Stein,367.36
+Rhein,BW,Tauber,Bad Mergentheim,1017
+Rhein,BW,Wutach,Oberlauchringen,630.12
+Rhein,BW,Kinzig,Schwaibach,955.05
+Rhein,BW,Neckar,Oberndorf,690.48
+Rhein,BW,Jagst,Dörzbach,1029.99
+Rhein,BW,Schussen,Gerbertshaus,782.21
+Rhein,BY,Roter Main,Bayreuth,340.28
+Rhein,BY,Pegnitz,Hohenstadt,488.5
+Rhein,BY,Fränkische Saale,Bad Kissingen,1576.22
+Rhein,HE,Nidda,Bad Vilbel,1619.3
+Rhein,HE,Kinzig,Hanau,919.88
+Rhein,HE,Lahn,Marburg,1666.2
+Rhein,NI,Vechte,Emlichheim,1731
+Rhein,NRW,Lippe,Kesseler 3,2002.97
+Rhein,RP,Wied,Friedrichsthal,680.45
+Rhein,RP,Speyerbach,Neustadt a.d.W.,311.77
+Rhein,RP,Nahe,Martinstein 2,1468
+Rhein,RP,Glan,Odenbach,1088
+Rhein,RP,Nims,Alsdorf-Oberecken,263.81
+Maas,NRW,Niers,Goch,1203.21
+Weser,HE,Fulda,Bad Hersfeld,2120.2
+Weser,HE,Diemel,Helmarshausen,1757.12
+Weser,HE,Eder,Schmittlotheim,1202
+Weser,NI,Lamme,Bad Salzdetfurth,127
+Weser,NI,Rhume,Berka R,895
+Weser,NI,Aller,Brenneckenbrück,1638
+Weser,NI,Böhme,Brock,285
+Weser,NI,Schunter,Harxbüttel,592
+Weser,NI,Wümme,Hellwege,893
+Weser,NI,Hunte,Huntlosen II,1714
+Weser,NI,Fuhse,Peine,360
+Weser,NI,Leine,Reckershausen,321
+Weser,NI,Große Aue,Ströhen,584
+Weser,NRW,Werre,Herford,871.09
+Weser,TH,Ulster,Unterbreizbach-Räsa,399
+Weser,TH,Werra,Vacha,2246
+Ems,NI,Hase,Bramsche,682
+Ems,NI,Speller Aa,Hesselte,370
+Ems,NI,Soeste,Kampe,408
+Ems,NRW,Werse,Albersloh,321.58
+Ems,NRW,Ems,Einen,1485.77
+Elbe,BB,Kleine Elster,Schadewitz,637
+Elbe,BB,Plane,Trebitz,227
+Elbe,BB,Nuthe,Babelsberg,1787
+Elbe,BB,Löcknitz,Gadow,464
+Elbe,BB,Dahme,Prierow 2,399
+Elbe,NI,Ilmenau,Bienenbüttel,1434
+Elbe,NI,Jeetzel,Lüchow,1300
+Elbe,NI,Oste,Rockstedt,611
+Elbe,SH,Stör,Willenscharen,467
+Elbe,SN,Spree,Bautzen 1,278
+Elbe,SN,Zwickauer Mulde,Wechselburg 1,2099
+Elbe,SN,Zschopau,Lichtenwalde 1,1572
+Elbe,ST,Weiße Elster,Zeitz,2485.65
+Elbe,ST,Ehle,Dannigkow,263.31
+Elbe,ST,Biese,Dobbrun,1571.54
+Elbe,TH,Zorge,Nordhausen,304
+Elbe,TH,Ilm,Niedertrebra,894.3
+Elbe,TH,Unstrut,Nägelstedt,716
+Elbe,TH,Gera,Erfurt-Möbisburg,842.8
+Oder,SN,Lausitzer Neiße,Zittau 1,695
+Oder,MV,Uecker,Pasewalk Bollwerk,1431
+Eider,SH,Soholmer Au,Soholm,352
+Schlei/Trave,MV,Stepenitz,Börzow,441
+Schlei/Trave,SH,Trave,Sehmsdorf,722
+Warnow/Peene,MV,Warnow,Langen Brütz,352
+Warnow/Peene,MV,Ostpeene,Gielow Süd,361.5
+Warnow/Peene,MV,Nebel,Güstrow,645
